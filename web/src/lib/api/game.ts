@@ -260,14 +260,7 @@ export function useGameScoreboard({
     () => ({
       queryKey: keys(),
       queryFn: async () =>
-        await getGameScoreboard(
-          id(),
-          page?.() ?? 1,
-          page_size?.() ?? 15,
-          with_hidden?.(),
-          institute_id?.(),
-          tag?.()
-        ),
+        await getGameScoreboard(id(), page?.() ?? 1, page_size?.() ?? 15, with_hidden?.(), institute_id?.(), tag?.()),
       enabled: enabled?.(),
       throwOnError: (err: Error) => {
         handleHttpError(err, t("game.scoreboard.errors.fetchScoreboard.title"));

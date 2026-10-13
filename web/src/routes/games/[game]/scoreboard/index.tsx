@@ -48,13 +48,11 @@ function ChartOperations(props: {
     }));
   });
   const gameTagsSelect = createMemo(() =>
-    [...new Set(props.tags ?? [])]
-      .sort()
-      .map((tag) => ({
-        value: tag,
-        label: tag,
-        icon: "icon-[fluent--tag-20-regular] w-5 h-5",
-      }))
+    [...new Set(props.tags ?? [])].sort().map((tag) => ({
+      value: tag,
+      label: tag,
+      icon: "icon-[fluent--tag-20-regular] w-5 h-5",
+    }))
   );
 
   const breakpoints = {
