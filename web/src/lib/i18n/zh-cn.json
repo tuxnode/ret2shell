@@ -1663,7 +1663,7 @@
         "required": "昵称不能为空",
         "minLength": "昵称至少 2 个字符",
         "maxLength": "昵称最多 32 个字符",
-        "placeholder": "请输入昵称（不推荐真名哦）",
+        "placeholder": "请输入昵称（请按照规则填写）",
         "label": "昵称"
       },
       "email": {

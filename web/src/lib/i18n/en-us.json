@@ -1663,7 +1663,7 @@
         "required": "Nickname cannot be empty",
         "minLength": "Nickname must be at least 2 characters",
         "maxLength": "Nickname can be up to 32 characters",
-        "placeholder": "Please enter a nickname (not recommended using your real name)",
+        "placeholder": "Please enter a nickname according to the rules",
         "label": "Nickname"
       },
       "email": {
