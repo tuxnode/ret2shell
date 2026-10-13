@@ -42,7 +42,7 @@ export function FormBare(
       content: challenge.data?.content || "",
       initial: challenge.data?.score_rule?.initial ?? 1000,
       minimum: challenge.data?.score_rule?.minimum ?? 500,
-      decay: challenge.data?.score_rule?.decay ?? 10,
+      decay: challenge.data?.score_rule?.decay ?? 30,
       release_at: challenge.data?.release_at?.toSeconds() ?? null,
       archive_at: challenge.data?.archive_at?.toSeconds() ?? null,
     },
@@ -63,7 +63,7 @@ export function FormBare(
           content: challenge.data?.content || "",
           initial: challenge.data?.score_rule?.initial ?? 1000,
           minimum: challenge.data?.score_rule?.minimum ?? 500,
-          decay: challenge.data?.score_rule?.decay ?? 10,
+          decay: challenge.data?.score_rule?.decay ?? 30,
           release_at: challenge.data?.release_at?.toSeconds() ?? null,
           archive_at: challenge.data?.archive_at?.toSeconds() ?? null,
         });
@@ -73,7 +73,7 @@ export function FormBare(
         setValues(form, {
           initial: 1000,
           minimum: 500,
-          decay: 10,
+          decay: 30,
         });
       });
     }
