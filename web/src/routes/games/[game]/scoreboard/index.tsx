@@ -16,7 +16,7 @@ import Input from "@widgets/input";
 import Select from "@widgets/select";
 import clsx from "clsx";
 import { DateTime } from "luxon";
-import { createEffect, createMemo, createSignal, Match, onMount, Show, Switch, untrack } from "solid-js";
+import { createEffect, createMemo, createSignal, Match, onCleanup, onMount, Show, Switch, untrack } from "solid-js";
 import TeamDetails from "./_blocks/team-details";
 import TeamRanks from "./_blocks/team-ranks";
 import TeamSolves from "./_blocks/team-solves";
@@ -67,6 +67,30 @@ function ChartOperations(props: {
     "2xl": "1536px",
   };
   const matches = createBreakpoints(breakpoints);
+  const [filterValue, setFilterValue] = createSignal(props.filter ?? "");
+  let filterTimer: ReturnType<typeof setTimeout> | undefined;
+
+  createEffect(() => {
+    setFilterValue(props.filter ?? "");
+  });
+
+  const submitFilter = (filter: string) => {
+    if (filterTimer) clearTimeout(filterTimer);
+    props.onFilterChanged?.(filter);
+  };
+
+  const scheduleFilter = (filter: string) => {
+    setFilterValue(filter);
+    if (filterTimer) clearTimeout(filterTimer);
+    filterTimer = setTimeout(() => {
+      props.onFilterChanged?.(filter);
+      filterTimer = undefined;
+    }, 400);
+  };
+
+  onCleanup(() => {
+    if (filterTimer) clearTimeout(filterTimer);
+  });
 
   return (
     <div class="flex flex-col sm:flex-row gap-2 justify-between">
@@ -123,8 +147,11 @@ function ChartOperations(props: {
         size={props.size}
         ghost={props.ghost}
         placeholder={t("game.scoreboard.search")}
-        value={props.filter ?? ""}
-        onInput={(event) => props.onFilterChanged?.(event.currentTarget.value)}
+        value={filterValue()}
+        onInput={(event) => scheduleFilter(event.currentTarget.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") submitFilter(event.currentTarget.value);
+        }}
       />
       <Show when={props.institute || props.tag || props.filter}>
         <Button
