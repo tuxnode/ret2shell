@@ -130,15 +130,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
-      # Build each platform on a native runner and upload its digest for the merge job.
+      # Build the amd64 image on a native runner and upload its digest for publishing.
       matrix:
         include:
           - platform: linux/amd64
             os: ubuntu-latest
             target: x86_64-unknown-linux-musl
-          - platform: linux/arm64
-            os: ubuntu-24.04-arm
-            target: aarch64-unknown-linux-musl
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
