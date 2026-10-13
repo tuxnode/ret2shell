@@ -685,7 +685,7 @@
         "label": "Misc settings"
       },
       "awardRate": {
-        "label": "Extra reward score ratio",
+        "label": "Extra reward score ratio (based on challenge score at solve time)",
         "firstBlood": "First blood reward score ratio",
         "secondBlood": "Second blood reward score ratio",
         "thirdBlood": "Third Blood Reward Ratio",

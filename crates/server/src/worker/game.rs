@@ -321,6 +321,10 @@ fn get_award_rate(game: &game::Model, blood_state: i32) -> i32 {
   0
 }
 
+fn calculate_blood_bonus(challenge_score: i32, award_rate: i32) -> i32 {
+  challenge_score * award_rate / 100
+}
+
 #[allow(clippy::too_many_arguments)]
 async fn submission_worker_exec(
   queue: Queue, db: Database, cache: Cache, engine: Engine, checker: Checker, bucket: Bucket,
@@ -439,7 +443,7 @@ async fn submission_worker_exec(
     let changed_at = submission.created_at;
     let mut team = team.clone();
     if let Some(blood_state) = blood_state {
-      let score = challenge.score_rule.initial * get_award_rate(&game, blood_state) / 100;
+      let score = calculate_blood_bonus(challenge.score, get_award_rate(&game, blood_state));
       if score > 0 {
         extra::create(
           &txn,
@@ -586,6 +590,17 @@ async fn score_maintenance_worker_exec_game(db: Database, game_id: i64) -> Resul
     update_team_state(&db, team).await.ok();
   }
   Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::calculate_blood_bonus;
+
+  #[test]
+  fn blood_bonus_uses_current_challenge_score() {
+    assert_eq!(calculate_blood_bonus(700, 20), 140);
+    assert_eq!(calculate_blood_bonus(1000, 20), 200);
+  }
 }
 
 pub async fn update_team_state(db: &Database, team: team::Model) -> Result<(), ResponseError> {

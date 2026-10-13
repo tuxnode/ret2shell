@@ -685,7 +685,7 @@
         "label": "その他設定"
       },
       "awardRate": {
-        "label": "追加報酬ポイント割合",
+        "label": "追加報酬ポイント割合（解答時の問題スコア基準）",
         "firstBlood": "一血報酬スコア割合",
         "secondBlood": "二血報酬スコア割合",
         "thirdBlood": "三血報酬スコア割合",

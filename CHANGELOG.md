@@ -22,6 +22,7 @@
 ### Common Developing Changes
 
 - optimize i18n file structure (#198)
+- Blood bonuses are calculated from the challenge score at solve time.
 
 ## 3.7.1
 
