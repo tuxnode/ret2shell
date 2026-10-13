@@ -579,6 +579,22 @@
         }
       }
     },
+    "scoreboardRecalculate": {
+      "title": "Scoreboard recalculation",
+      "description": "Recalculate first, second, and third blood bonuses from historical solve order and update team scores. Preview before executing.",
+      "preview": "Preview recalculation",
+      "execute": "Execute recalculation",
+      "previewResult": "Preview result (no data changed)",
+      "executeResult": "Recalculation completed",
+      "challenges": "Challenges: {{count}}",
+      "bloodExtras": "Blood records: {{count}}",
+      "changedExtras": "Rewards to change/create: {{count}}",
+      "changedTeams": "Affected teams: {{count}}",
+      "scoreDelta": "Reward score delta: {{count}}",
+      "errors": {
+        "title": "Scoreboard recalculation failed"
+      }
+    },
     "writeups": {
       "title": "Write-ups",
       "empty": "No write-ups available"

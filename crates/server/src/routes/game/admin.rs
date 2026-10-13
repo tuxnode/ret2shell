@@ -1,3 +1,5 @@
+use std::collections::{HashMap, HashSet};
+
 use axum::{
   Extension, Json,
   extract::{Query, State},
@@ -5,9 +7,10 @@ use axum::{
 };
 use chrono::{DateTime, Utc, serde::ts_seconds};
 use r2s_cache::Cache;
-use r2s_database::{audit, game, submission, user};
+use r2s_database::{audit, challenge, extra, game, submission, team, user};
 use r2s_event::EventManager;
 use r2s_migrator::Database;
+use sea_orm::TransactionTrait;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -103,6 +106,156 @@ pub(super) async fn get_submissions(
   )
   .await?;
   Ok(Json(submissions))
+}
+
+#[derive(Debug, Deserialize)]
+pub(super) struct RecalculateScoreboardRequest {
+  pub dry_run: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub(super) struct RecalculateScoreboardResponse {
+  pub dry_run: bool,
+  pub challenges: u64,
+  pub blood_extras: u64,
+  pub changed_extras: u64,
+  pub changed_teams: u64,
+  pub score_delta: i64,
+}
+
+pub(super) async fn recalculate_scoreboard(
+  State(ref db): State<Database>, Extension(game): Extension<game::Model>,
+  Json(request): Json<RecalculateScoreboardRequest>,
+) -> Result<impl IntoResponse, ResponseError> {
+  let txn = db.conn.begin().await?;
+  let challenges = challenge::get_full_list(&txn, game.id).await?;
+  let challenge_by_id: HashMap<_, _> = challenges.iter().map(|c| (c.id, c)).collect();
+  let submissions = submission::get_all_solved_for_game(&txn, game.id).await?;
+  let mut first_solves = HashSet::new();
+  let mut solve_counts = HashMap::<i64, u64>::new();
+  let mut blood_solves = Vec::new();
+  for submission in submissions {
+    let Some(team_id) = submission.team_id else {
+      continue;
+    };
+    if !first_solves.insert((team_id, submission.challenge_id)) {
+      continue;
+    }
+    let count = solve_counts.entry(submission.challenge_id).or_default();
+    *count += 1;
+    if *count <= 3 {
+      blood_solves.push((team_id, submission.challenge_id, *count, submission.score));
+    }
+  }
+
+  let mut extras_by_key = HashMap::new();
+  for team in team::get_list_by_game_id(&txn, game.id).await? {
+    for extra in extra::get_list(&txn, team.id).await? {
+      if let (Some(challenge_id), Some(blood_state)) = (
+        extra.challenge_id,
+        extra.reason.strip_prefix("No.").and_then(|reason| {
+          reason
+            .split_once(' ')
+            .and_then(|(state, _)| state.parse::<u64>().ok())
+        }),
+      ) {
+        extras_by_key.insert((team.id, challenge_id, blood_state), extra);
+      }
+    }
+  }
+
+  let blood_extras = blood_solves.len() as u64;
+  let mut changed_extras = 0;
+  let mut score_delta = 0;
+  let mut team_deltas = HashMap::<i64, i32>::new();
+  for (team_id, challenge_id, blood_state, _) in blood_solves {
+    let Some(challenge) = challenge_by_id.get(&challenge_id) else {
+      continue;
+    };
+    let award_rate = get_award_rate(&game, blood_state as i32);
+    let score = challenge::score_for_decay(&challenge.score_rule, blood_state) * award_rate / 100;
+    let key = (team_id, challenge_id, blood_state);
+    if let Some(extra) = extras_by_key.get(&key) {
+      if extra.score != score {
+        changed_extras += 1;
+        score_delta += i64::from(score - extra.score);
+        *team_deltas.entry(team_id).or_default() += score - extra.score;
+        if !request.dry_run {
+          extra::update(
+            &txn,
+            extra::Model {
+              score,
+              ..extra.clone()
+            },
+          )
+          .await?;
+        }
+      }
+    } else if score > 0 {
+      changed_extras += 1;
+      score_delta += i64::from(score);
+      *team_deltas.entry(team_id).or_default() += score;
+      if !request.dry_run {
+        extra::create(
+          &txn,
+          extra::Model {
+            id: 0,
+            created_at: chrono::Utc::now(),
+            reason: format!(
+              "No.{blood_state} solution for challenge {}:{}",
+              challenge.id, challenge.name
+            ),
+            score,
+            hint_id: None,
+            team_id,
+            challenge_id: Some(challenge_id),
+          },
+        )
+        .await?;
+      }
+    }
+  }
+
+  let mut changed_teams = 0;
+  if !request.dry_run {
+    for team in team::get_list_by_game_id(&txn, game.id).await? {
+      let score = team::calc_score(&txn, team.id).await?;
+      if score != team.score {
+        changed_teams += 1;
+        team::update(&txn, team::Model { score, ..team }).await?;
+      }
+    }
+    txn.commit().await?;
+  } else {
+    for team in team::get_list_by_game_id(&txn, game.id).await? {
+      if team_deltas.get(&team.id).copied().unwrap_or_default() != 0 {
+        changed_teams += 1;
+      }
+    }
+  }
+  Ok(Json(RecalculateScoreboardResponse {
+    dry_run: request.dry_run,
+    challenges: challenges.len() as u64,
+    blood_extras,
+    changed_extras,
+    changed_teams,
+    score_delta,
+  }))
+}
+
+fn get_award_rate(game: &game::Model, blood_state: i32) -> i32 {
+  if let Some(award_rates) = &game.award_rates {
+    return award_rates
+      .0
+      .get(blood_state as usize - 1)
+      .copied()
+      .unwrap_or_default();
+  }
+  if (1..=3).contains(&blood_state) {
+    game.award_rate * (4 - blood_state) / 3
+  } else {
+    0
+  }
 }
 
 pub(super) async fn get_audit_messages(

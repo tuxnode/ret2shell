@@ -363,7 +363,7 @@ where
   let challenges = challenge::get_full_list(db, game_id).await?;
   let challenge_ids: HashSet<i64> = challenges
     .iter()
-    .filter(|challenge| challenge.tag.0.iter().any(|t| t.name == tag))
+    .filter(|challenge| challenge.tag.contains_name(tag))
     .map(|challenge| challenge.id)
     .collect();
   let submissions =

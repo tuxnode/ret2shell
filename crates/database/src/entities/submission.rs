@@ -164,6 +164,7 @@ where
   if let Some(game_id) = game_id {
     sql = sql.filter(challenge::Column::GameId.eq(game_id));
   }
+
   if let Some(challenge_id) = challenge_id {
     sql = sql.filter(Column::ChallengeId.eq(challenge_id));
   }
@@ -210,6 +211,28 @@ where
   } else {
     Ok(result)
   }
+}
+
+pub async fn get_all_solved_for_game<C>(db: &C, game_id: i64) -> Result<Vec<ExModel>, DbErr>
+where
+  C: ConnectionTrait, {
+  let result = Entity::find()
+    .join(JoinType::LeftJoin, Relation::Team.def())
+    .join(JoinType::InnerJoin, Relation::Challenge.def())
+    .join(JoinType::InnerJoin, Relation::User.def())
+    .filter(challenge::Column::GameId.eq(game_id))
+    .filter(Column::Solved.eq(true))
+    .filter(Column::TeamId.is_not_null())
+    .filter(team::Column::State.gte(team::State::Hidden))
+    .column_as(challenge::Column::Name, "challenge_name")
+    .column_as(team::Column::Name, "team_name")
+    .column_as(challenge::Column::Score, "score")
+    .order_by_asc(Column::CreatedAt)
+    .order_by_asc(Column::Id)
+    .into_model()
+    .all(db)
+    .await?;
+  Ok(result)
 }
 
 #[allow(clippy::too_many_arguments)]

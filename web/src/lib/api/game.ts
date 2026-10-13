@@ -358,6 +358,37 @@ export async function updateGameAdmins(game_id: number, admins: number[]) {
   return await api.patch(`${api_root}/game/${game_id}/administrator`, { json: admins }).json<Game>();
 }
 
+export type ScoreboardRecalculation = {
+  dry_run: boolean;
+  challenges: number;
+  blood_extras: number;
+  changed_extras: number;
+  changed_teams: number;
+  score_delta: number;
+};
+
+export async function recalculateScoreboard(game_id: number, dry_run: boolean) {
+  return await api
+    .post(`${api_root}/game/${game_id}/scoreboard/recalculate`, { json: { dry_run } })
+    .json<ScoreboardRecalculation>();
+}
+
+export function useRecalculateScoreboardMutation(
+  props: { onSuccess?: (data: ScoreboardRecalculation) => void; onError?: (err: Error) => void } = {}
+) {
+  return useMutation(() => ({
+    mutationFn: (params: { game_id: number; dry_run: boolean }) =>
+      recalculateScoreboard(params.game_id, params.dry_run),
+    onSuccess: (data: ScoreboardRecalculation) => {
+      props.onSuccess?.(data);
+    },
+    onError: (err: Error) => {
+      handleHttpError(err, t("game.scoreboardRecalculate.errors.title"));
+      props.onError?.(err);
+    },
+  }));
+}
+
 export function useUpdateGameAdminsMutation(
   props: { onSuccess?: (game: Game) => void; onError?: (err: Error) => void } = {}
 ) {

@@ -579,6 +579,22 @@
         }
       }
     },
+    "scoreboardRecalculate": {
+      "title": "榜單回算",
+      "description": "依歷史解題順序重新計算前三血獎勵並更新隊伍分數。建議先預覽，確認無誤後再正式執行。",
+      "preview": "預覽回算",
+      "execute": "正式執行",
+      "previewResult": "預覽結果（未修改資料）",
+      "executeResult": "回算完成",
+      "challenges": "題目數：{{count}}",
+      "bloodExtras": "前三血記錄數：{{count}}",
+      "changedExtras": "將修改/新增的獎勵：{{count}}",
+      "changedTeams": "受影響隊伍：{{count}}",
+      "scoreDelta": "獎勵分變化：{{count}}",
+      "errors": {
+        "title": "榜單回算失敗"
+      }
+    },
     "writeups": {
       "title": "題解",
       "empty": "暫無題解"

@@ -579,6 +579,22 @@
         }
       }
     },
+    "scoreboardRecalculate": {
+      "title": "スコアボード再計算",
+      "description": "過去の解答順に基づいて一血・二血・三血報酬を再計算し、チームスコアを更新します。実行前にプレビューしてください。",
+      "preview": "再計算をプレビュー",
+      "execute": "再計算を実行",
+      "previewResult": "プレビュー結果（データ未変更）",
+      "executeResult": "再計算完了",
+      "challenges": "問題数：{{count}}",
+      "bloodExtras": "血報酬記録数：{{count}}",
+      "changedExtras": "変更/追加される報酬：{{count}}",
+      "changedTeams": "影響を受けるチーム：{{count}}",
+      "scoreDelta": "報酬スコア差分：{{count}}",
+      "errors": {
+        "title": "スコアボードの再計算に失敗しました"
+      }
+    },
     "writeups": {
       "title": "問題解説",
       "empty": "問題解説なし"

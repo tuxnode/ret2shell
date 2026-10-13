@@ -57,6 +57,12 @@ pub struct Tag {
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
 pub struct TagList(pub Vec<Tag>);
 
+impl TagList {
+  pub fn contains_name(&self, name: &str) -> bool {
+    self.0.iter().any(|tag| tag.name == name)
+  }
+}
+
 /// Challenge ids that must be solved before this challenge can be interacted
 /// with (submit, start instance, download attachment, unlock hint).
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
@@ -381,19 +387,7 @@ where
     false,
   )
   .await?;
-  let score_rule = &challenge.score_rule;
-  let score = if decay < 1 {
-    score_rule.initial
-  } else if decay >= score_rule.decay as u64 {
-    score_rule.minimum
-  } else {
-    let relative_ratio = (decay as f64 - 1.0) / (score_rule.decay as f64 - 1.0);
-    let cos_theta = (relative_ratio * std::f64::consts::PI).cos();
-    let normalized_score = (cos_theta + 1.0) / 2.0;
-    let score_f = score_rule.minimum as f64
-      + (score_rule.initial - score_rule.minimum) as f64 * normalized_score;
-    score_f.round() as i32
-  };
+  let score = score_for_decay(&challenge.score_rule, decay);
   let challenge_score_changed = challenge.score != score;
   if challenge_score_changed {
     let challenge = update_score(
@@ -408,6 +402,21 @@ where
     return Ok((challenge_score_changed, decay, challenge));
   }
   Ok((challenge_score_changed, decay, challenge))
+}
+
+pub fn score_for_decay(score_rule: &ScoreRule, decay: u64) -> i32 {
+  if decay < 1 {
+    score_rule.initial
+  } else if decay >= score_rule.decay as u64 {
+    score_rule.minimum
+  } else {
+    let relative_ratio = (decay as f64 - 1.0) / (score_rule.decay as f64 - 1.0);
+    let cos_theta = (relative_ratio * std::f64::consts::PI).cos();
+    let normalized_score = (cos_theta + 1.0) / 2.0;
+    let score_f = score_rule.minimum as f64
+      + (score_rule.initial - score_rule.minimum) as f64 * normalized_score;
+    score_f.round() as i32
+  }
 }
 
 pub async fn delete<C>(db: &C, id: i64) -> Result<(), DbErr>

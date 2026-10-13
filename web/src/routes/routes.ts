@@ -129,6 +129,10 @@ export const routes = {
                   component: lazy(() => import("./games/[game]/admin/statistics/index")),
                 },
                 {
+                  path: "/scoreboard-recalculate",
+                  component: lazy(() => import("./games/[game]/admin/scoreboard-recalculate/index")),
+                },
+                {
                   path: "/edit",
                   component: lazy(() => import("./games/[game]/admin/edit/index")),
                 },

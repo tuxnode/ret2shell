@@ -95,6 +95,10 @@ pub fn router(state: &GlobalState) -> Router<GlobalState> {
         .route("/doc/{doc}", patch(core::update_game_doc))
         .route("/introduction", patch(core::update_game_intro_compat))
         .route("/submission", get(admin::get_submissions))
+        .route(
+          "/scoreboard/recalculate",
+          post(admin::recalculate_scoreboard),
+        )
         .nest(
           "/audit",
           Router::new()

@@ -127,6 +127,17 @@ where
   extra.insert(db).await
 }
 
+pub async fn update<C>(db: &C, extra: Model) -> Result<Model, DbErr>
+where
+  C: ConnectionTrait, {
+  let extra = ActiveModel {
+    id: ActiveValue::Unchanged(extra.id),
+    score: ActiveValue::Set(extra.score),
+    ..extra.into_active_model()
+  };
+  extra.update(db).await
+}
+
 pub async fn delete<C>(db: &C, id: i64) -> Result<(), DbErr>
 where
   C: ConnectionTrait, {
