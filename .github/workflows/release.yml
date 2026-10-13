@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - "[0-9]*.[0-9]*.[0-9]*"
+      - "*"
   # Manual releases are allowed, but prepare will fail unless the selected ref resolves to a tag.
   workflow_dispatch:
 

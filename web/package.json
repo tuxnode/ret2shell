@@ -1,6 +1,6 @@
 {
   "name": "ret2shell",
-  "version": "3.12.4",
+  "version": "3.12.5",
   "type": "module",
   "private": true,
   "description": "Ret 2 Shell is a feature-riches CTF challenge platform.",
