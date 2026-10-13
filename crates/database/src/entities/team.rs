@@ -370,10 +370,10 @@ where
     submission::get_list(db, true, false, Some(game_id), None, None, None, false).await?;
   let mut scores = HashMap::<i64, i32>::new();
   for submission in submissions {
-    if challenge_ids.contains(&submission.challenge_id) {
-      if let Some(team_id) = submission.team_id {
-        *scores.entry(team_id).or_default() += submission.score;
-      }
+    if challenge_ids.contains(&submission.challenge_id)
+      && let Some(team_id) = submission.team_id
+    {
+      *scores.entry(team_id).or_default() += submission.score;
     }
   }
   for team in &teams {
