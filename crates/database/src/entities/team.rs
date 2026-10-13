@@ -347,6 +347,7 @@ where
   Ok((teams, total))
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn get_page_by_tag<C>(
   db: &C, game_id: i64, page: u64, page_size: u64, min_state: Option<State>,
   institute_id: Option<i64>, tag: &str, filter: Option<String>,
