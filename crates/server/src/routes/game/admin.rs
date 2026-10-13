@@ -7,7 +7,11 @@ use axum::{
 };
 use chrono::{DateTime, Utc, serde::ts_seconds};
 use r2s_cache::Cache;
-use r2s_database::{audit, challenge, extra, game, submission, team, user};
+use r2s_database::{
+  audit, challenge, challenge_milestone, extra, game, submission,
+  team::{self, TeamScoreHistory, TeamScoreHistoryList},
+  user,
+};
 use r2s_event::EventManager;
 use r2s_migrator::Database;
 use sea_orm::TransactionTrait;
@@ -134,6 +138,7 @@ pub(super) async fn recalculate_scoreboard(
   let mut first_solves = HashSet::new();
   let mut solve_counts = HashMap::<i64, u64>::new();
   let mut blood_solves = Vec::new();
+  let mut team_solves = HashMap::<i64, Vec<(DateTime<Utc>, i64, i64, i32)>>::new();
   for submission in submissions {
     let Some(team_id) = submission.team_id else {
       continue;
@@ -141,6 +146,12 @@ pub(super) async fn recalculate_scoreboard(
     if !first_solves.insert((team_id, submission.challenge_id)) {
       continue;
     }
+    team_solves.entry(team_id).or_default().push((
+      submission.created_at,
+      submission.id,
+      submission.challenge_id,
+      submission.score,
+    ));
     let count = solve_counts.entry(submission.challenge_id).or_default();
     *count += 1;
     if *count <= 3 {
@@ -168,12 +179,14 @@ pub(super) async fn recalculate_scoreboard(
   let mut changed_extras = 0;
   let mut score_delta = 0;
   let mut team_deltas = HashMap::<i64, i32>::new();
+  let mut blood_scores = HashMap::<(i64, i64), (i32, i32)>::new();
   for (team_id, challenge_id, blood_state, _) in blood_solves {
     let Some(challenge) = challenge_by_id.get(&challenge_id) else {
       continue;
     };
     let award_rate = get_award_rate(&game, blood_state as i32);
     let score = challenge::score_for_decay(&challenge.score_rule, blood_state) * award_rate / 100;
+    blood_scores.insert((team_id, challenge_id), (blood_state as i32, score));
     let key = (team_id, challenge_id, blood_state);
     if let Some(extra) = extras_by_key.get(&key) {
       if extra.score != score {
@@ -218,11 +231,54 @@ pub(super) async fn recalculate_scoreboard(
 
   let mut changed_teams = 0;
   if !request.dry_run {
+    let milestones = challenge_milestone::get_list(&txn, game.id).await?;
     for team in team::get_list_by_game_id(&txn, game.id).await? {
       let score = team::calc_score(&txn, team.id).await?;
-      if score != team.score {
+      let mut history = vec![TeamScoreHistory {
+        changed_at: game.start_at,
+        score: 0,
+        challenge_id: None,
+        blood_state: None,
+      }];
+      let mut solved = HashSet::new();
+      let mut previous_milestone_score = 0;
+      let mut running_score = 0;
+      let mut solves = team_solves.remove(&team.id).unwrap_or_default();
+      solves.sort_by_key(|(created_at, id, ..)| (*created_at, *id));
+      for (changed_at, _, challenge_id, submission_score) in solves {
+        running_score += submission_score;
+        let blood = blood_scores.get(&(team.id, challenge_id)).copied();
+        if let Some((_, blood_score)) = blood {
+          running_score += blood_score;
+        }
+        solved.insert(challenge_id);
+        let milestone_score = challenge_milestone::milestone_bonus(&solved, &milestones);
+        running_score += milestone_score - previous_milestone_score;
+        previous_milestone_score = milestone_score;
+        history.push(TeamScoreHistory {
+          changed_at,
+          score: running_score,
+          challenge_id: Some(challenge_id),
+          blood_state: blood.map(|(state, _)| state),
+        });
+      }
+      let last_active_at = history
+        .last()
+        .filter(|history| history.challenge_id.is_some())
+        .map(|history| history.changed_at)
+        .unwrap_or(team.last_active_at);
+      if score != team.score || team.history.0 != history || team.last_active_at != last_active_at {
         changed_teams += 1;
-        team::update(&txn, team::Model { score, ..team }).await?;
+        team::update(
+          &txn,
+          team::Model {
+            score,
+            history: TeamScoreHistoryList(history),
+            last_active_at,
+            ..team
+          },
+        )
+        .await?;
       }
     }
     txn.commit().await?;
