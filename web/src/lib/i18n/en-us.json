@@ -571,6 +571,7 @@
       "title": "Scoreboard",
       "empty": "No participating teams yet",
       "selectInstitute": "Select an institute...",
+      "selectTag": "Select a challenge tag...",
       "currentPeriod": "Current time period",
       "errors": {
         "fetchScoreboard": {

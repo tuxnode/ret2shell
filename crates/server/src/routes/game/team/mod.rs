@@ -262,6 +262,7 @@ struct TeamListQuery {
   pub institute_id: Option<i64>,
   pub asc: Option<bool>,
   pub min_state: Option<team::State>,
+  pub tag: Option<String>,
 }
 
 async fn get_team_list(
@@ -278,18 +279,31 @@ async fn get_team_list(
   } else {
     query.min_state
   };
-  let (teams, total) = team::get_page(
-    &db.conn,
-    game.id,
-    page(query.page),
-    page_size(query.page_size, DEFAULT_PAGE_SIZE),
-    min_state,
-    query.institute_id,
-    query.filter,
-    query.order,
-    query.asc.unwrap_or(true),
-  )
-  .await?;
+  let (teams, total) = if let Some(tag) = query.tag.as_deref() {
+    team::get_page_by_tag(
+      &db.conn,
+      game.id,
+      page(query.page),
+      page_size(query.page_size, DEFAULT_PAGE_SIZE),
+      min_state,
+      query.institute_id,
+      tag,
+    )
+    .await?
+  } else {
+    team::get_page(
+      &db.conn,
+      game.id,
+      page(query.page),
+      page_size(query.page_size, DEFAULT_PAGE_SIZE),
+      min_state,
+      query.institute_id,
+      query.filter,
+      query.order,
+      query.asc.unwrap_or(true),
+    )
+    .await?
+  };
   let teams = if auth::is_game_admin!(token, game) {
     teams
   } else {

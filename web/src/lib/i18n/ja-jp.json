@@ -571,6 +571,7 @@
       "title": "ポイントボード",
       "empty": "参加チームなし",
       "selectInstitute": "組織を選択...",
+      "selectTag": "問題タグを選択...",
       "currentPeriod": "今週目",
       "errors": {
         "fetchScoreboard": {

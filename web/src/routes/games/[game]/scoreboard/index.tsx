@@ -24,11 +24,14 @@ function ChartOperations(props: {
   onRefresh?: () => void;
   onExport?: () => void;
   onInstituteChanged?: (institute: number | null) => void;
+  onTagChanged?: (tag: string | null) => void;
   size?: "md" | "sm";
   ghost?: boolean;
   showHiddenTeams?: boolean;
   onShowHiddenTeams?: (show: boolean) => void;
   institute?: number | null;
+  tag?: string | null;
+  tags?: string[];
 }) {
   const params = useParams();
   const gameId = createMemo(() => Number.parseInt(params.game || "0", 10) || 0);
@@ -44,6 +47,15 @@ function ChartOperations(props: {
       icon: "icon-[fluent--hat-graduation-20-regular] w-5 h-5",
     }));
   });
+  const gameTagsSelect = createMemo(() =>
+    [...new Set(props.tags ?? [])]
+      .sort()
+      .map((tag) => ({
+        value: tag,
+        label: tag,
+        icon: "icon-[fluent--tag-20-regular] w-5 h-5",
+      }))
+  );
 
   const breakpoints = {
     sm: "640px",
@@ -95,6 +107,15 @@ function ChartOperations(props: {
         }}
         value={(props.institute && [props.institute.toString()]) || undefined}
       />
+      <Select
+        class="flex-1 max-w-64 min-w-0 w-0"
+        size={props.size}
+        ghost={props.ghost}
+        placeholder={t("game.scoreboard.selectTag")}
+        items={gameTagsSelect()}
+        onValueChange={(v) => props.onTagChanged?.(v.value.at(0) || null)}
+        value={props.tag ? [props.tag] : undefined}
+      />
     </div>
   );
 }
@@ -113,6 +134,7 @@ export default function () {
   const selectedInstituteId = createMemo(
     () => Number.parseInt((searchParams.institute as string) || "NaN", 10) || null
   );
+  const selectedTag = createMemo(() => (searchParams.tag as string) || null);
   const [showPlane, setShowPlane] = createSignal(false);
   // const [showReal, setShowReal] = createSignal(!canAccessChallenges()[0]);
   const [showReal, setShowReal] = createSignal(true);
@@ -147,6 +169,7 @@ export default function () {
     page: () => 1,
     page_size: () => 10,
     with_hidden: () => showHiddenTeams(),
+    tag: () => selectedTag(),
     enabled: () => gameId() > 0 && !selectedInstituteId(),
   });
 
@@ -156,6 +179,7 @@ export default function () {
     page_size: () => 10,
     with_hidden: () => showHiddenTeams(),
     institute_id: () => selectedInstituteId()!,
+    tag: () => selectedTag(),
     enabled: () => gameId() > 0 && !!selectedInstituteId(),
   });
 
@@ -164,6 +188,7 @@ export default function () {
     page: () => page(),
     page_size: () => pageSize() ?? 15,
     with_hidden: () => showHiddenTeams(),
+    tag: () => selectedTag(),
     enabled: () => gameId() > 0 && !!pageSize() && !selectedInstituteId(),
   });
 
@@ -173,6 +198,7 @@ export default function () {
     page_size: () => pageSize() ?? 15,
     with_hidden: () => showHiddenTeams(),
     institute_id: () => selectedInstituteId()!,
+    tag: () => selectedTag(),
     enabled: () => gameId() > 0 && !!pageSize() && !!selectedInstituteId(),
   });
 
@@ -183,6 +209,9 @@ export default function () {
   const teams = createMemo<Team[]>(() => activeTeamsQuery().data?.[0] ?? []);
   const total = createMemo(() => activeTeamsQuery().data?.[1] ?? 0);
   const challengeList = createMemo(() => challenges.data?.[0] ?? []);
+  const challengeTags = createMemo(() => [
+    ...new Set(challengeList().flatMap((challenge) => challenge.tag.map((tag) => tag.name))),
+  ]);
 
   onMount(async () => {
     pageHeight = createElementSize(autoPageSizeWatcher!);
@@ -385,7 +414,10 @@ export default function () {
                     showHiddenTeams={showHiddenTeams()}
                     onShowHiddenTeams={(e) => setSearchParams({ hidden: e ? "true" : null })}
                     onInstituteChanged={(e) => setSearchParams({ institute: e })}
+                    onTagChanged={(e) => setSearchParams({ tag: e })}
                     institute={selectedInstituteId()}
+                    tag={selectedTag()}
+                    tags={challengeTags()}
                   />
                 </div>
               </Show>
@@ -397,7 +429,10 @@ export default function () {
                 onRefresh={handleRefresh}
                 onShowHiddenTeams={(e) => setSearchParams({ hidden: e ? "true" : null })}
                 onInstituteChanged={(e) => setSearchParams({ institute: e })}
+                onTagChanged={(e) => setSearchParams({ tag: e })}
                 institute={selectedInstituteId()}
+                tag={selectedTag()}
+                tags={challengeTags()}
               />
             </Show>
             <Switch>
