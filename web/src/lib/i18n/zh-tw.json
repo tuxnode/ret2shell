@@ -569,9 +569,14 @@
     },
     "scoreboard": {
       "title": "積分板",
+      "instituteTitle": "{{institute}}排行榜",
+      "tagTitle": "{{tag}}方向排行榜",
+      "filteredTitle": "{{institute}} · {{tag}}方向排行榜",
       "empty": "暫無參賽隊伍",
       "selectInstitute": "選擇組織...",
       "selectTag": "選擇題目標籤...",
+      "clearFilters": "清除篩選",
+      "challengeCount": "該方向題目數：{{count}}",
       "challengeProgress": "已解 {{solved}}/{{total}} 題",
       "currentPeriod": "本週目",
       "errors": {

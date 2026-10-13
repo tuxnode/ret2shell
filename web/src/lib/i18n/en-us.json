@@ -569,9 +569,14 @@
     },
     "scoreboard": {
       "title": "Scoreboard",
+      "instituteTitle": "{{institute}} scoreboard",
+      "tagTitle": "{{tag}} scoreboard",
+      "filteredTitle": "{{institute}} · {{tag}} scoreboard",
       "empty": "No participating teams yet",
       "selectInstitute": "Select an institute...",
       "selectTag": "Select a challenge tag...",
+      "clearFilters": "Clear filters",
+      "challengeCount": "Challenges in this direction: {{count}}",
       "challengeProgress": "{{solved}}/{{total}} challenges solved",
       "currentPeriod": "Current time period",
       "errors": {

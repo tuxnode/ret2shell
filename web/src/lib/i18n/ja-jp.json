@@ -569,9 +569,14 @@
     },
     "scoreboard": {
       "title": "ポイントボード",
+      "instituteTitle": "{{institute}}ランキング",
+      "tagTitle": "{{tag}}ランキング",
+      "filteredTitle": "{{institute}}・{{tag}}ランキング",
       "empty": "参加チームなし",
       "selectInstitute": "組織を選択...",
       "selectTag": "問題タグを選択...",
+      "clearFilters": "絞り込みを解除",
+      "challengeCount": "この分野の問題数：{{count}}",
       "challengeProgress": "{{solved}}/{{total}} 問題解決済み",
       "currentPeriod": "今週目",
       "errors": {

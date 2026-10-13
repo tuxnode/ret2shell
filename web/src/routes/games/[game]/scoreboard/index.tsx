@@ -32,6 +32,7 @@ function ChartOperations(props: {
   institute?: number | null;
   tag?: string | null;
   tags?: string[];
+  onClearFilters?: () => void;
 }) {
   const params = useParams();
   const gameId = createMemo(() => Number.parseInt(params.game || "0", 10) || 0);
@@ -65,8 +66,8 @@ function ChartOperations(props: {
   const matches = createBreakpoints(breakpoints);
 
   return (
-    <div class="flex flex-row space-x-2 justify-between overflow-hidden">
-      <div class="flex flex-row space-x-2">
+    <div class="flex flex-col sm:flex-row gap-2 justify-between">
+      <div class="flex flex-row space-x-2 shrink-0">
         <Button
           square
           class={props.size === "md" ? (matches.lg ? "btn-md" : "btn-sm") : "btn-sm"}
@@ -95,7 +96,7 @@ function ChartOperations(props: {
         </Button>
       </div>
       <Select
-        class="flex-1 max-w-64 min-w-0 w-0"
+        class="flex-1 min-w-0 sm:max-w-64"
         size={props.size}
         ghost={props.ghost}
         placeholder={t("game.scoreboard.selectInstitute")}
@@ -106,7 +107,7 @@ function ChartOperations(props: {
         value={(props.institute && [props.institute.toString()]) || undefined}
       />
       <Select
-        class="flex-1 max-w-64 min-w-0 w-0"
+        class="flex-1 min-w-0 sm:max-w-64"
         size={props.size}
         ghost={props.ghost}
         placeholder={t("game.scoreboard.selectTag")}
@@ -114,6 +115,17 @@ function ChartOperations(props: {
         onValueChange={(v) => props.onTagChanged?.(v.value.at(0) || null)}
         value={props.tag ? [props.tag] : undefined}
       />
+      <Show when={props.institute || props.tag}>
+        <Button
+          square
+          size={props.size}
+          ghost={props.ghost}
+          onClick={() => props.onClearFilters?.()}
+          title={t("game.scoreboard.clearFilters")}
+        >
+          <span class="shrink-0 icon-[fluent--dismiss-20-regular] w-5 h-5" />
+        </Button>
+      </Show>
     </div>
   );
 }
@@ -144,6 +156,10 @@ export default function () {
   });
 
   const institutes = useInstitutes();
+  const gameInstitutes = createMemo(
+    () =>
+      institutes.data?.filter((institute) => (game.data?.access_policy.institutes ?? []).includes(institute.id)) ?? []
+  );
 
   const selfTeam = useSelfTeam({
     game_id: () => gameId(),
@@ -211,6 +227,34 @@ export default function () {
   const challengeTags = createMemo(() => [
     ...new Set(challengeList().flatMap((challenge) => challenge.tag.map((tag) => tag.name))),
   ]);
+  const selectedInstituteName = createMemo(
+    () => gameInstitutes().find((institute) => institute.id === selectedInstituteId())?.name
+  );
+  const filteredChallengeTotal = createMemo(() =>
+    selectedTag()
+      ? challengeList().filter((challenge) => challenge.tag.some((tag) => tag.name === selectedTag())).length
+      : challengeTotal()
+  );
+  const scoreboardHeading = createMemo(() => {
+    const institute = selectedInstituteName();
+    const tag = selectedTag();
+    if (institute && tag) return t("game.scoreboard.filteredTitle", { institute, tag });
+    if (institute) return t("game.scoreboard.instituteTitle", { institute });
+    if (tag) return t("game.scoreboard.tagTitle", { tag });
+    return t("game.scoreboard.title");
+  });
+  const changeInstitute = (institute: number | null) => {
+    setPage(1);
+    setSearchParams({ institute });
+  };
+  const changeTag = (tag: string | null) => {
+    setPage(1);
+    setSearchParams({ tag });
+  };
+  const clearFilters = () => {
+    setPage(1);
+    setSearchParams({ institute: null, tag: null });
+  };
 
   onMount(async () => {
     pageHeight = createElementSize(autoPageSizeWatcher!);
@@ -412,8 +456,9 @@ export default function () {
                     onRefresh={handleRefresh}
                     showHiddenTeams={showHiddenTeams()}
                     onShowHiddenTeams={(e) => setSearchParams({ hidden: e ? "true" : null })}
-                    onInstituteChanged={(e) => setSearchParams({ institute: e })}
-                    onTagChanged={(e) => setSearchParams({ tag: e })}
+                    onInstituteChanged={changeInstitute}
+                    onTagChanged={changeTag}
+                    onClearFilters={clearFilters}
                     institute={selectedInstituteId()}
                     tag={selectedTag()}
                     tags={challengeTags()}
@@ -427,8 +472,9 @@ export default function () {
                 showHiddenTeams={showHiddenTeams()}
                 onRefresh={handleRefresh}
                 onShowHiddenTeams={(e) => setSearchParams({ hidden: e ? "true" : null })}
-                onInstituteChanged={(e) => setSearchParams({ institute: e })}
-                onTagChanged={(e) => setSearchParams({ tag: e })}
+                onInstituteChanged={changeInstitute}
+                onTagChanged={changeTag}
+                onClearFilters={clearFilters}
                 institute={selectedInstituteId()}
                 tag={selectedTag()}
                 tags={challengeTags()}
@@ -461,7 +507,12 @@ export default function () {
             when={showChallengeDetail()}
             fallback={
               <>
-                <h1 class="text-3xl font-bold py-6 text-center hidden lg:inline-block">{t("game.scoreboard.title")}</h1>
+                <h1 class="text-3xl font-bold py-6 text-center hidden lg:inline-block">{scoreboardHeading()}</h1>
+                <Show when={selectedTag()}>
+                  <p class="text-center text-sm opacity-60 -mt-4 mb-4">
+                    {t("game.scoreboard.challengeCount", { count: filteredChallengeTotal() })}
+                  </p>
+                </Show>
                 <TeamRanks
                   gameId={gameId()}
                   game={game.data}
