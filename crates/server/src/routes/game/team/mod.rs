@@ -288,6 +288,7 @@ async fn get_team_list(
       min_state,
       query.institute_id,
       tag,
+      query.filter,
     )
     .await?
   } else {

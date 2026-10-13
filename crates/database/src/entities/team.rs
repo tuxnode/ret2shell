@@ -326,7 +326,8 @@ where
   let mut sql = Entity::find()
     .filter(Column::GameId.eq(game_id))
     .filter(Column::State.gte(state));
-  sql = filter_sql(sql, filter)?;
+  let member_team_ids = get_member_team_ids(db, filter.as_deref()).await?;
+  sql = filter_sql(sql, filter, member_team_ids)?;
   if let Some(institute_id) = institute_id {
     sql = sql.filter(Column::InstituteId.eq(institute_id));
   }
@@ -348,7 +349,7 @@ where
 
 pub async fn get_page_by_tag<C>(
   db: &C, game_id: i64, page: u64, page_size: u64, min_state: Option<State>,
-  institute_id: Option<i64>, tag: &str,
+  institute_id: Option<i64>, tag: &str, filter: Option<String>,
 ) -> Result<(Vec<Model>, u64), DbErr>
 where
   C: ConnectionTrait, {
@@ -359,7 +360,17 @@ where
   if let Some(institute_id) = institute_id {
     teams = teams.filter(Column::InstituteId.eq(institute_id));
   }
+  let member_team_ids = get_member_team_ids(db, filter.as_deref()).await?;
   let mut teams = teams.all(db).await?;
+  if let Some(filter) = filter {
+    let filter = filter.to_ascii_lowercase();
+    teams.retain(|team| {
+      team.name.to_ascii_lowercase().contains(&filter)
+        || member_team_ids
+          .as_ref()
+          .is_some_and(|ids| ids.contains(&team.id))
+    });
+  }
   let challenges = challenge::get_full_list(db, game_id).await?;
   let challenge_ids: HashSet<i64> = challenges
     .iter()
@@ -415,7 +426,8 @@ where
     .column_as(game::Column::Name, "game_name")
     .filter(Column::GameId.eq(game_id))
     .filter(Column::State.gte(state));
-  sql = filter_sql(sql, filter)?;
+  let member_team_ids = get_member_team_ids(db, filter.as_deref()).await?;
+  sql = filter_sql(sql, filter, member_team_ids)?;
   if let Some(institute_id) = institute_id {
     sql = sql.filter(Column::InstituteId.eq(institute_id));
   }
@@ -435,8 +447,35 @@ where
   Ok((teams, total))
 }
 
-fn filter_sql(mut sql: Select<Entity>, filter: Option<String>) -> Result<Select<Entity>, DbErr> {
+async fn get_member_team_ids<C>(db: &C, filter: Option<&str>) -> Result<Option<Vec<i64>>, DbErr>
+where
+  C: ConnectionTrait, {
+  let Some(filter) = filter.filter(|filter| !filter.trim().is_empty()) else {
+    return Ok(None);
+  };
+  let filter = format!("%{}%", filter.to_ascii_lowercase());
+  let team_ids = user2_team::Entity::find()
+    .select_only()
+    .column(user2_team::Column::TeamId)
+    .join(JoinType::InnerJoin, user2_team::Relation::User.def())
+    .filter(
+      Condition::any()
+        .add(Expr::expr(Func::lower(Expr::col(user::Column::Nickname))).like(filter.clone()))
+        .add(Expr::expr(Func::lower(Expr::col(user::Column::Account))).like(filter)),
+    )
+    .into_tuple()
+    .all(db)
+    .await?;
+  Ok(Some(team_ids))
+}
+
+fn filter_sql(
+  mut sql: Select<Entity>, filter: Option<String>, member_team_ids: Option<Vec<i64>>,
+) -> Result<Select<Entity>, DbErr> {
   if let Some(filter) = filter {
+    if filter.trim().is_empty() {
+      return Ok(sql);
+    }
     let mut cond = Condition::any();
     if let Ok(num) = filter.parse::<i64>() {
       cond = cond.add(Column::Id.eq(num));
@@ -444,7 +483,10 @@ fn filter_sql(mut sql: Select<Entity>, filter: Option<String>) -> Result<Select<
     }
     let filter = format!("%{}%", filter.to_ascii_lowercase());
     cond = cond.add(Expr::expr(Func::lower(Expr::col(Column::Name))).like(filter.clone()));
-    cond = cond.add(Column::Token.like(filter.clone()));
+    cond = cond.add(Column::Token.like(filter));
+    if let Some(team_ids) = member_team_ids {
+      cond = cond.add(Column::Id.is_in(team_ids));
+    }
     sql = sql.filter(cond);
   };
   Ok(sql)

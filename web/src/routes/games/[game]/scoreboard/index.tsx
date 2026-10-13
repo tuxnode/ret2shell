@@ -12,6 +12,7 @@ import { Title } from "@storage/header";
 import { breakpoints, t } from "@storage/theme";
 import Button from "@widgets/button";
 import Chart from "@widgets/chart";
+import Input from "@widgets/input";
 import Select from "@widgets/select";
 import clsx from "clsx";
 import { DateTime } from "luxon";
@@ -33,6 +34,8 @@ function ChartOperations(props: {
   tag?: string | null;
   tags?: string[];
   onClearFilters?: () => void;
+  filter?: string | null;
+  onFilterChanged?: (filter: string) => void;
 }) {
   const params = useParams();
   const gameId = createMemo(() => Number.parseInt(params.game || "0", 10) || 0);
@@ -115,7 +118,15 @@ function ChartOperations(props: {
         onValueChange={(v) => props.onTagChanged?.(v.value.at(0) || null)}
         value={props.tag ? [props.tag] : undefined}
       />
-      <Show when={props.institute || props.tag}>
+      <Input
+        class="flex-1 min-w-0 sm:max-w-64"
+        size={props.size}
+        ghost={props.ghost}
+        placeholder={t("game.scoreboard.search")}
+        value={props.filter ?? ""}
+        onInput={(event) => props.onFilterChanged?.(event.currentTarget.value)}
+      />
+      <Show when={props.institute || props.tag || props.filter}>
         <Button
           square
           size={props.size}
@@ -145,6 +156,7 @@ export default function () {
     () => Number.parseInt((searchParams.institute as string) || "NaN", 10) || null
   );
   const selectedTag = createMemo(() => (searchParams.tag as string) || null);
+  const selectedFilter = createMemo(() => (searchParams.filter as string) || "");
   const [showPlane, setShowPlane] = createSignal(false);
   // const [showReal, setShowReal] = createSignal(!canAccessChallenges()[0]);
   const [showReal, setShowReal] = createSignal(true);
@@ -184,6 +196,7 @@ export default function () {
     page_size: () => 10,
     with_hidden: () => showHiddenTeams(),
     tag: () => selectedTag(),
+    filter: () => selectedFilter(),
     enabled: () => gameId() > 0 && !selectedInstituteId(),
   });
 
@@ -194,6 +207,7 @@ export default function () {
     with_hidden: () => showHiddenTeams(),
     institute_id: () => selectedInstituteId()!,
     tag: () => selectedTag(),
+    filter: () => selectedFilter(),
     enabled: () => gameId() > 0 && !!selectedInstituteId(),
   });
 
@@ -203,6 +217,7 @@ export default function () {
     page_size: () => pageSize() ?? 15,
     with_hidden: () => showHiddenTeams(),
     tag: () => selectedTag(),
+    filter: () => selectedFilter(),
     enabled: () => gameId() > 0 && !!pageSize() && !selectedInstituteId(),
   });
 
@@ -213,6 +228,7 @@ export default function () {
     with_hidden: () => showHiddenTeams(),
     institute_id: () => selectedInstituteId()!,
     tag: () => selectedTag(),
+    filter: () => selectedFilter(),
     enabled: () => gameId() > 0 && !!pageSize() && !!selectedInstituteId(),
   });
 
@@ -251,9 +267,13 @@ export default function () {
     setPage(1);
     setSearchParams({ tag });
   };
+  const changeFilter = (filter: string) => {
+    setPage(1);
+    setSearchParams({ filter: filter || null });
+  };
   const clearFilters = () => {
     setPage(1);
-    setSearchParams({ institute: null, tag: null });
+    setSearchParams({ institute: null, tag: null, filter: null });
   };
 
   onMount(async () => {
@@ -459,6 +479,8 @@ export default function () {
                     onInstituteChanged={changeInstitute}
                     onTagChanged={changeTag}
                     onClearFilters={clearFilters}
+                    filter={selectedFilter()}
+                    onFilterChanged={changeFilter}
                     institute={selectedInstituteId()}
                     tag={selectedTag()}
                     tags={challengeTags()}
@@ -475,6 +497,8 @@ export default function () {
                 onInstituteChanged={changeInstitute}
                 onTagChanged={changeTag}
                 onClearFilters={clearFilters}
+                filter={selectedFilter()}
+                onFilterChanged={changeFilter}
                 institute={selectedInstituteId()}
                 tag={selectedTag()}
                 tags={challengeTags()}

@@ -208,7 +208,8 @@ export async function getGameScoreboard(
   page_size?: number,
   with_hidden?: boolean,
   institute_id?: number,
-  tag?: string | null
+  tag?: string | null,
+  filter?: string | null
 ) {
   return (
     await api.get(`${api_root}/game/${id}/team`, {
@@ -219,6 +220,7 @@ export async function getGameScoreboard(
           page_size,
           institute_id,
           tag,
+          filter,
           asc: false,
           order: "score",
         })
@@ -234,6 +236,7 @@ export function useGameScoreboard({
   with_hidden,
   institute_id,
   tag,
+  filter,
   enabled,
   onError,
 }: {
@@ -243,6 +246,7 @@ export function useGameScoreboard({
   with_hidden?: () => boolean;
   institute_id?: () => number;
   tag?: () => string | null;
+  filter?: () => string | null;
   enabled?: () => boolean;
   onError?: (err: Error) => boolean;
 }) {
@@ -252,6 +256,7 @@ export function useGameScoreboard({
     "scoreboard",
     institute_id?.(),
     tag?.(),
+    filter?.(),
     with_hidden?.(),
     page?.(),
     page_size?.(),
@@ -260,7 +265,15 @@ export function useGameScoreboard({
     () => ({
       queryKey: keys(),
       queryFn: async () =>
-        await getGameScoreboard(id(), page?.() ?? 1, page_size?.() ?? 15, with_hidden?.(), institute_id?.(), tag?.()),
+        await getGameScoreboard(
+          id(),
+          page?.() ?? 1,
+          page_size?.() ?? 15,
+          with_hidden?.(),
+          institute_id?.(),
+          tag?.(),
+          filter?.()
+        ),
       enabled: enabled?.(),
       throwOnError: (err: Error) => {
         handleHttpError(err, t("game.scoreboard.errors.fetchScoreboard.title"));

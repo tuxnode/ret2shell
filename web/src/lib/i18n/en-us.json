@@ -575,6 +575,7 @@
       "empty": "No participating teams yet",
       "selectInstitute": "Select an institute...",
       "selectTag": "Select a challenge tag...",
+      "search": "Search team or member...",
       "clearFilters": "Clear filters",
       "challengeCount": "Challenges in this direction: {{count}}",
       "challengeProgress": "{{solved}}/{{total}} challenges solved",

@@ -575,6 +575,7 @@
       "empty": "暫無參賽隊伍",
       "selectInstitute": "選擇組織...",
       "selectTag": "選擇題目標籤...",
+      "search": "搜尋隊伍名稱或隊員...",
       "clearFilters": "清除篩選",
       "challengeCount": "該方向題目數：{{count}}",
       "challengeProgress": "已解 {{solved}}/{{total}} 題",

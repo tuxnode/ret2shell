@@ -575,6 +575,7 @@
       "empty": "暂无参赛队伍",
       "selectInstitute": "选择组织...",
       "selectTag": "选择题目标签...",
+      "search": "搜索队伍名称或队员...",
       "clearFilters": "清除筛选",
       "challengeCount": "该方向题目数：{{count}}",
       "challengeProgress": "已解 {{solved}}/{{total}} 题",
