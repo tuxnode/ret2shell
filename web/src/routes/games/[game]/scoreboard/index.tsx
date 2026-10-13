@@ -207,6 +207,7 @@ export default function () {
   const teams = createMemo<Team[]>(() => activeTeamsQuery().data?.[0] ?? []);
   const total = createMemo(() => activeTeamsQuery().data?.[1] ?? 0);
   const challengeList = createMemo(() => challenges.data?.[0] ?? []);
+  const challengeTotal = createMemo(() => challenges.data?.[1] ?? 0);
   const challengeTags = createMemo(() => [
     ...new Set(challengeList().flatMap((challenge) => challenge.tag.map((tag) => tag.name))),
   ]);
@@ -443,6 +444,7 @@ export default function () {
                   game={game.data}
                   institutes={institutes.data ?? []}
                   teams={teams()}
+                  challengeTotal={challengeTotal()}
                   page={page()}
                   pageSize={pageSize()!}
                   total={total()}
@@ -465,6 +467,7 @@ export default function () {
                   game={game.data}
                   institutes={institutes.data ?? []}
                   teams={teams()}
+                  challengeTotal={challengeTotal()}
                   page={page()}
                   pageSize={pageSize()!}
                   showTime={!showLargePanel()}

@@ -572,6 +572,7 @@
       "empty": "No participating teams yet",
       "selectInstitute": "Select an institute...",
       "selectTag": "Select a challenge tag...",
+      "challengeProgress": "{{solved}}/{{total}} challenges solved",
       "currentPeriod": "Current time period",
       "errors": {
         "fetchScoreboard": {

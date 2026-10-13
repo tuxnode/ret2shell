@@ -17,6 +17,7 @@ export default function TeamRanks(props: {
   game?: Game;
   institutes: Institute[];
   teams: Team[];
+  challengeTotal: number;
   page: number;
   pageSize: number;
   total: number;
@@ -40,6 +41,11 @@ export default function TeamRanks(props: {
       }
     }
     return team.score;
+  }
+  function getSolvedCount(team: Team) {
+    return new Set(
+      team.history.filter((history) => history.challenge_id !== null).map((history) => history.challenge_id)
+    ).size;
   }
   const matches = createBreakpoints(breakpoints);
   return (
@@ -88,6 +94,15 @@ export default function TeamRanks(props: {
                   </span>
                 </Show>
               </div>
+              <span
+                class="shrink-0 text-sm opacity-70"
+                title={t("game.scoreboard.challengeProgress", {
+                  solved: getSolvedCount(team),
+                  total: props.challengeTotal,
+                })}
+              >
+                {getSolvedCount(team)}/{props.challengeTotal}
+              </span>
               <span class={clsx("flex flex-row items-center space-x-2", props.showTime && matches.lg && "flex-1 w-0")}>
                 <span class="flex-1" />
                 <Show when={team.state === TeamState.Hidden}>

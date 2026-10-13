@@ -572,6 +572,7 @@
       "empty": "暫無參賽隊伍",
       "selectInstitute": "選擇組織...",
       "selectTag": "選擇題目標籤...",
+      "challengeProgress": "已解 {{solved}}/{{total}} 題",
       "currentPeriod": "本週目",
       "errors": {
         "fetchScoreboard": {
