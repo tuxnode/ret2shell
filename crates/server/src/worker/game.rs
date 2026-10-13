@@ -592,17 +592,6 @@ async fn score_maintenance_worker_exec_game(db: Database, game_id: i64) -> Resul
   Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-  use super::calculate_blood_bonus;
-
-  #[test]
-  fn blood_bonus_uses_current_challenge_score() {
-    assert_eq!(calculate_blood_bonus(700, 20), 140);
-    assert_eq!(calculate_blood_bonus(1000, 20), 200);
-  }
-}
-
 pub async fn update_team_state(db: &Database, team: team::Model) -> Result<(), ResponseError> {
   let txn = db.conn.begin().await?;
   let score = team::calc_score(&txn, team.id).await;
@@ -635,4 +624,15 @@ pub async fn update_team_state(db: &Database, team: team::Model) -> Result<(), R
   }
   txn.commit().await?;
   Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::calculate_blood_bonus;
+
+  #[test]
+  fn blood_bonus_uses_current_challenge_score() {
+    assert_eq!(calculate_blood_bonus(700, 20), 140);
+    assert_eq!(calculate_blood_bonus(1000, 20), 200);
+  }
 }
