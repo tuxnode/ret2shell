@@ -292,6 +292,9 @@ async fn get_team_list(
     )
     .await?
   } else {
+    let has_order = query.order.is_some();
+    let order = query.order.or_else(|| Some("score".to_owned()));
+    let asc = query.asc.unwrap_or(has_order);
     team::get_page(
       &db.conn,
       game.id,
@@ -300,8 +303,8 @@ async fn get_team_list(
       min_state,
       query.institute_id,
       query.filter,
-      query.order,
-      query.asc.unwrap_or(true),
+      order,
+      asc,
     )
     .await?
   };
